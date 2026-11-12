@@ -8,8 +8,10 @@ It is a two-half Harness bundle — a Host plugin that talks to the Moodle Web S
 
 ## Install
 
+Not published to npm yet, so install straight from the repository:
+
 ```sh
-dsh plugin add dsh-xmum-moodle
+dsh plugin add github:Langlijun666/dsh-xmum-moodle
 ```
 
 Then restart DeepSeek Harness. A mortarboard icon appears in the sidebar; the panel has three tabs: **课程 / Courses**, **日程 / Schedule**, **设置 / Settings**.
@@ -113,8 +115,10 @@ MIT — see [LICENSE](LICENSE).
 
 ### 安装
 
+还没发 npm，直接从仓库安装：
+
 ```sh
-dsh plugin add dsh-xmum-moodle
+dsh plugin add github:Langlijun666/dsh-xmum-moodle
 ```
 
 重启后侧边栏多一个学士帽图标，面板分三个页签：**课程 / 日程 / 设置**。
