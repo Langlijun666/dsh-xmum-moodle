@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+Thumbs.db
+
+# Local state written by the plugin at runtime — never publish it.
+school-settings.json
+*.tgz

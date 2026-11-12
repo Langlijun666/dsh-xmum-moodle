@@ -1,0 +1,50 @@
+{
+  "name": "dsh-xmum-moodle",
+  "version": "0.1.0",
+  "description": "XMUM Moodle inside the DeepSeek Harness sidebar: sign in, browse courses by term, read announcements as a schedule, and batch-download course files.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Langlijun666",
+  "homepage": "https://github.com/Langlijun666/dsh-xmum-moodle#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Langlijun666/dsh-xmum-moodle.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Langlijun666/dsh-xmum-moodle/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "moodle",
+    "xmum",
+    "lms",
+    "education"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  }
+}
