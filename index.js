@@ -793,23 +793,38 @@ export function apply(ctx, config) {
     return { events, diagnostics }
   }
 
-  async function handleEvents(request, response, url) {
-    const session = await requireSession()
-    const now = Math.floor(Date.now() / 1000)
-    const from = Number(url.searchParams.get('from')) || now - DAY_SECONDS
-    const to = Number(url.searchParams.get('to')) || now + 60 * DAY_SECONDS
+  function scanIntervalMs() {
+    const hours = Number(config && config.scanIntervalHours)
+    const value = Number.isFinite(hours) && hours > 0 ? hours : 24
+    return value * 3600 * 1000
+  }
+
+  // The auto-detected half of the schedule is the expensive part — a calendar
+  // read, two activity sweeps, and one request per news forum. It is cached and
+  // reused until the interval passes or the reader explicitly refreshes. Manual
+  // events, ignored ids and the visible window are applied on every read, so
+  // those stay instant.
+  let scanCache = { at: 0, events: [], diagnostics: {}, mode: '' }
+
+  async function scanAutoEvents(session, now) {
+    const from = now - 7 * DAY_SECONDS
+    const to = now + 180 * DAY_SECONDS
 
     let events = null
+    let mode = eventsMode
     if (eventsMode !== 'calendar') {
       try {
         events = await loadActionEvents(session, from, to)
         eventsMode = 'action'
+        mode = 'action'
       } catch (error) {
         if (error instanceof HttpError && error.status === 401) throw error
         eventsMode = 'calendar'
+        mode = 'calendar'
       }
     }
     if (events === null) events = await loadCalendarEvents(session, from, to)
+
     const sweep = await loadActivityDeadlines(session, to)
       .catch(() => ({ events: [], diagnostics: { sweep: 'failed' } }))
     let announcements = []
@@ -819,6 +834,33 @@ export function apply(ctx, config) {
     } catch (error) {
       sweep.diagnostics.announcement = error instanceof Error ? error.message : String(error)
     }
+
+    return {
+      events: mergeEvents(events, sweep.events.concat(announcements)),
+      diagnostics: sweep.diagnostics,
+      mode,
+    }
+  }
+
+  async function handleEvents(request, response, url) {
+    const session = await requireSession()
+    const now = Math.floor(Date.now() / 1000)
+    const from = Number(url.searchParams.get('from')) || now - DAY_SECONDS
+    const to = Number(url.searchParams.get('to')) || now + 60 * DAY_SECONDS
+    const force = url.searchParams.get('refresh') === '1'
+
+    let scanned = false
+    if (force || Date.now() - scanCache.at >= scanIntervalMs()) {
+      const result = await scanAutoEvents(session, now)
+      scanCache = {
+        at: Date.now(),
+        events: result.events,
+        diagnostics: result.diagnostics,
+        mode: result.mode,
+      }
+      scanned = true
+    }
+
     const manual = manualEvents.map((item) => ({
       id: item.id,
       name: item.name,
@@ -828,14 +870,22 @@ export function apply(ctx, config) {
       action: '',
       kind: 'manual',
     }))
-    events = mergeEvents(events, sweep.events.concat(announcements).concat(manual))
+    let events = mergeEvents(scanCache.events.slice(), manual)
     events = events.filter((event) => event.timesort >= from && event.timesort <= to)
     if (ignoredEvents.length > 0) {
       const ignored = new Set(ignoredEvents)
       events = events.filter((event) => !ignored.has(String(event.id)))
     }
     events.sort((left, right) => left.timesort - right.timesort)
-    send(response, 200, { from, to, mode: eventsMode, sources: sweep.diagnostics, announcementDebug, events })
+    send(response, 200, {
+      from,
+      to,
+      mode: scanCache.mode,
+      sources: scanCache.diagnostics,
+      fetchedAt: scanCache.at,
+      cached: !scanned,
+      events,
+    })
   }
 
   async function handle(request, response) {

@@ -377,6 +377,11 @@ window.__ModuleLoader__.load({
       return pad2(date.getHours()) + ':' + pad2(date.getMinutes());
     }
 
+    function formatClock(ms) {
+      const date = new Date(ms);
+      return pad2(date.getMonth() + 1) + '-' + pad2(date.getDate()) + ' ' + pad2(date.getHours()) + ':' + pad2(date.getMinutes());
+    }
+
     function formatDayLabel(key) {
       const parts = key.split('-').map(Number);
       const date = new Date(parts[0], parts[1] - 1, parts[2]);
@@ -467,17 +472,22 @@ window.__ModuleLoader__.load({
         bootstrap();
       }, [bootstrap]);
 
-      const loadEvents = React.useCallback(async () => {
+      const loadEvents = React.useCallback(async (force) => {
         setEvents((previous) => ({ status: 'loading', list: previous.list, error: '' }));
         try {
           const [data, manual, ignored] = await Promise.all([
-            callApi('/events'),
+            callApi('/events' + (force ? '?refresh=1' : '')),
             callApi('/manual-events'),
             callApi('/ignored-events'),
           ]);
           setManualEvents(Array.isArray(manual.events) ? manual.events : []);
           setIgnoredIds(Array.isArray(ignored.ids) ? ignored.ids : []);
-          setEvents({ status: 'ready', list: Array.isArray(data.events) ? data.events : [], error: '' });
+          setEvents({
+            status: 'ready',
+            list: Array.isArray(data.events) ? data.events : [],
+            fetchedAt: Number(data.fetchedAt) || 0,
+            error: '',
+          });
         } catch (failure) {
           if (failure && failure.status === 401) {
             setPhase('login');
@@ -1011,9 +1021,17 @@ window.__ModuleLoader__.load({
       } else if (tab === 'schedule') {
         body = h('div', null,
           h('div', { className: 'dsh-school-toolbar' },
-            h('span', { className: 'dsh-school-sub' }, '未来两个月的作业、测验与课程事件'),
+            h('span', { className: 'dsh-school-sub' }, '未来两个月'),
             h('div', { className: 'dsh-school-spacer' }),
-            h('button', { className: 'dsh-school-btn', type: 'button', onClick: loadEvents, disabled: events.status === 'loading' }, '刷新'),
+            events.fetchedAt
+              ? h('span', { className: 'dsh-school-sub' }, '数据截至 ' + formatClock(events.fetchedAt))
+              : null,
+            h('button', {
+              className: 'dsh-school-btn',
+              type: 'button',
+              onClick: () => loadEvents(true),
+              disabled: events.status === 'loading',
+            }, '刷新'),
           ),
           h('div', { className: 'dsh-school-addevent' },
             h('input', {

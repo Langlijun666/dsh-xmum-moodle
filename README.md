@@ -50,6 +50,8 @@ Two things it deliberately does not pretend to do:
 
 Only courses that ended less than a month ago are scanned. Moodle never unenrols you, so an old term's news forum would otherwise keep injecting stale events.
 
+The scan is cached for 24 hours (`scanIntervalHours` in the bundle config) and the panel shows when it last ran; **刷新 / Refresh** forces a rescan. Manual events and ignore choices are applied on every read, so those take effect immediately without a scan.
+
 ### Downloads
 
 Tick individual files, or download a whole course. Files land in a directory tree:
@@ -132,6 +134,8 @@ dsh plugin add github:Langlijun666/dsh-xmum-moodle
 两件事它不假装能做到：**日期写在图片里的公告读不出来**；**只在课堂上或群里通知的日期，Moodle 里根本没有**。所以日程页支持**手动添加**事件，也支持对误判的条目点「忽略」。
 
 只扫描结束不到一个月的课程——Moodle 不会自动退课，否则去年那门课的旧公告会一直往里塞。
+
+扫描结果缓存 24 小时（`scanIntervalHours`，在 bundle 配置里改），面板上显示「数据截至」时间，点「刷新」强制重扫。手动事件和忽略操作不经过缓存，立即生效。
 
 **下载**：勾选单个文件，或整门课下载。落盘结构是 `学期 / 课程 / 类型 / 文件`，类型按文件名自动判定（考试/实验/作业/课件/资料/其他），同名文件自动加 `(2)` 不覆盖。下载目录在设置里可改，默认 `~/Downloads/Moodle`，下载完可以直接打开文件夹。
 

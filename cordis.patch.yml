@@ -6,3 +6,7 @@
       name: 'dsh-xmum-moodle'
       config:
         siteUrl: 'https://l.xmu.edu.my'
+        # Hours to keep the auto-detected schedule (calendar, deadlines,
+        # announcements) before scanning Moodle again. The refresh button
+        # bypasses it. 0 is not special: it falls back to 24.
+        scanIntervalHours: 24
